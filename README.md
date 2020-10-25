@@ -9,5 +9,7 @@ We can not deny that Covid-19 has impacted our lives substantially. Many attempt
 
 
 =====================================================
+
+
 For the interactive plotting, you can visit here.
 https://alvianojs.shinyapps.io/IP_COVID19_CASE/
