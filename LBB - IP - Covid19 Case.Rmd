@@ -1,0 +1,116 @@
+---
+title: "LBB - IP - Covid Case"
+author: "AJS"
+date: "10/25/2020"
+output: html_document
+---
+<style>
+body {
+text-align: justify}
+</style>
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+Importing Library
+```{r ,results = FALSE, message=FALSE}
+library(tidyverse)
+library(ggpubr)
+library(scales)
+library(glue)
+library(plotly)
+library(ggplot2)
+```
+<br><br><br>
+We can not deny that Covid-19 has impacted our lives substantially. Many attempts have been made to survive the pandemics. Some companies chose to restructure, many workers were made redundant, and not a small number of companies were rendered inactive, temporaryly or permanently. Wearing masker, carrying hand sanitizer, distancing pyshically, and conducting meetings and classes online. We have been fighting the pandemics for more than 7 months but where are we now? 
+<br><br>
+In this session we are going to take a look at Covid-19 Dataset which is available on Kaggle.
+https://www.kaggle.com/imdevskp/corona-virus-report?select=full_grouped.csv
+
+<br><br>
+First, we load the dataset and save it into "full_covid" variable.
+```{r cars}
+full_covid <- read_csv("full_grouped.csv")
+```
+<br><br><br>
+We can use glimpse which is similiar to a combination of str() and head(). Afterwards we inspect for any NA values.
+```{r}
+glimpse(full_covid)
+colSums( is.na(full_covid))
+```
+<br><br><br>
+Thankfully we are dealing with one of the cleaner dataset in term of NA value. I would also say the most of the columns have been defined correctly except for "Country/Region" and "WHO Region". We should change the datatype for these 2 columns to factor. In this session, we use "dplyr" library to wrangle the data.
+
+```{r pressure}
+full_covid <- full_covid %>% 
+  mutate_at(c("Country/Region", "WHO Region"), as.factor)
+
+```
+
+
+```{r}
+max(full_covid$Date)
+```
+<br><br><br>
+Now that the preparation is done, we should be good to perform deeper analysis. Here I am going to calculate the Total Cases, Total Deaths, and Total Recovered from Covid-19 by it's country. 
+
+There are two ways of achieving this. One is to select the Confirmed, Deaths, Recovered columns where the max date in the dataset is. Or to aggregate all the New cases, New deaths, and New recovered columns. The choice is as you may see fit. One might argue that the 1st option is more efficient, but I will exercise the 2nd option so that we will make more use of aggregation function in the process.
+```{r , message=FALSE}
+plot_1_data <- full_covid %>% 
+  group_by(`Country/Region`, `WHO Region`) %>% 
+  summarise(across(starts_with("New"), sum)) %>% #here you can summarise multiple columns/variables as long as they are grouped by the same columns.
+  ungroup() %>% 
+  mutate(`Percent Recovered` =  round(`New recovered`/ `New cases`, 3))
+
+plot_1_data
+```
+
+
+<br><br><br>
+Since we have calculated the aggregate value and save it as "New cases", "New deaths", "New recovered", and "Percent Recovered", now we should be able to plot them.
+```{r}
+plot_1_fail <-  plot_1_data %>% 
+  ggplot(aes(x = reorder(`Country/Region`, -`Percent Recovered`), y = `Percent Recovered`, fill = `WHO Region`,
+             text = paste("Country:", `Country/Region`, "<br>", "Percent Recovered:", `Percent Recovered`))) +
+  geom_col() + 
+  labs(x = "Country") +
+  theme_minimal() +
+  theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+ggplotly(plot_1_fail, tooltip = c("text"))  
+```
+<br><br>
+That is such a colorful plot! Don't you think so? However, I am having a hard time looking at the graph because there are so many countries.
+Hmmm... Maybe we should try making an more interactive plot. Or instead of illustrating all the countries in a graph, we can use such filter that let the viewer choose which WHO Region they want to see and it will enable the graph to change dynamically.
+
+<br>
+Let's try building graph that with less countries. In this case, I'll filter where "WHO Region" is "South-East Asia" because it is the group which Indonesia belongs to.
+
+```{r}
+ plot_1_ok <- plot_1_data %>% 
+            filter(`WHO Region` == "South-East Asia") %>% 
+            ggplot(aes(x = reorder(`Country/Region`, -`Percent Recovered`), y = `Percent Recovered`, fill = `Country/Region`,
+                       text = paste("Country:", `Country/Region`, "<br>", "Percent Recovered:", `Percent Recovered`))) +
+            geom_col() + 
+            labs(x = "Country", title = "Total Number of Recovered") +
+            theme_minimal() +
+            theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+        ggplotly(plot_1_ok, tooltip = c("text"))
+```
+<br><br>
+Oh wow! In a span of 7 months, the percentage of recovered cases in Indonesia has reached 58%. Assuming that other things stay the same, the 100% recovered cases should be achieved in less than 7 months(linear regression). I am just eyeballing here. Of course deeper analysis should be conducted to understand the pattern. We should be proud to what we have achieved despite disheartening things that happened lately. On the other hand we should still comply to the protocol. Before I go, I'd like to present one more chart to help give you better idea of active cases on several countries. For other countries that is not in SEA, you could visit https://alvianojs.shinyapps.io/IP_COVID19_CASE/ . Okay, I am out!
+```{r , message=FALSE}
+plot_2_ok <- full_covid %>% 
+            filter(`WHO Region` == "South-East Asia") %>% 
+            ggplot(aes(x = Date, y = `Active`, color = `Country/Region`, group = `Country/Region`,
+                       text = paste("Country:", `Country/Region`, "<br>", "Active:", `Active`))) +
+            geom_line()+
+            theme_minimal() +
+            scale_y_continuous(name="Confirmed Cases", labels = comma)+
+            labs(title = "Number of Active Cases", x = NULL) +
+            scale_x_date(date_breaks = "1 month",  date_labels = "%B") 
+ggplotly(plot_2_ok, tooltip = c("text"))
+```
+
+

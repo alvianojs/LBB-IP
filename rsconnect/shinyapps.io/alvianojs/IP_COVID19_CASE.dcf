@@ -1,0 +1,12 @@
+name: IP_COVID19_CASE
+title: IP_COVID19_CASE
+username:
+account: alvianojs
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3090548
+bundleId: 3780332
+url: https://alvianojs.shinyapps.io/IP_COVID19_CASE/
+when: 1603638430.40031
+asMultiple: FALSE
+asStatic: FALSE
